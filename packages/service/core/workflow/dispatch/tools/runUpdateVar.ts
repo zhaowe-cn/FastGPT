@@ -11,9 +11,11 @@ import {
 } from '@fastgpt/global/core/workflow/runtime/utils';
 import { type TUpdateListItem } from '@fastgpt/global/core/workflow/template/system/variableUpdate/type';
 import { type ModuleDispatchProps } from '@fastgpt/global/core/workflow/runtime/type';
-import { removeSystemVariable } from '../utils';
+import { runtimeSystemVar2StoreType } from '../utils';
 import { isValidReferenceValue } from '@fastgpt/global/core/workflow/utils';
 import { valueTypeFormat } from '@fastgpt/global/core/workflow/runtime/utils';
+import { parseUrlToFileType } from '@fastgpt/global/common/file/tools';
+import { z } from 'zod';
 
 type Props = ModuleDispatchProps<{
   [NodeInputKeyEnum.updateList]: TUpdateListItem[];
@@ -22,8 +24,10 @@ type Response = DispatchNodeResultType<{}>;
 
 export const dispatchUpdateVariable = async (props: Props): Promise<Response> => {
   const {
+    chatConfig,
     params,
     variables,
+    cloneVariables,
     runtimeNodes,
     workflowStreamResponse,
     externalProvider,
@@ -32,6 +36,7 @@ export const dispatchUpdateVariable = async (props: Props): Promise<Response> =>
 
   const { updateList } = params;
   const nodeIds = runtimeNodes.map((node) => node.nodeId);
+  const urlSchema = z.string().url();
 
   const result = updateList.map((item) => {
     const variable = item.variable;
@@ -58,13 +63,22 @@ export const dispatchUpdateVariable = async (props: Props): Promise<Response> =>
                 variables
               })
             : item.value?.[1];
+
         return valueTypeFormat(val, item.valueType);
       } else {
-        return getReferenceVariableValue({
+        const val = getReferenceVariableValue({
           value: item.value,
           variables,
           nodes: runtimeNodes
         });
+
+        if (
+          Array.isArray(val) &&
+          val.every((url) => typeof url === 'string' && urlSchema.safeParse(url).success)
+        ) {
+          return val.map((url) => parseUrlToFileType(url)).filter(Boolean);
+        }
+        return val;
       }
     })();
 
@@ -90,7 +104,12 @@ export const dispatchUpdateVariable = async (props: Props): Promise<Response> =>
   if (!runningAppInfo.isChildApp) {
     workflowStreamResponse?.({
       event: SseResponseEventEnum.updateVariables,
-      data: removeSystemVariable(variables, externalProvider.externalWorkflowVariables)
+      data: runtimeSystemVar2StoreType({
+        variables,
+        cloneVariables,
+        removeObj: externalProvider.externalWorkflowVariables,
+        userVariablesConfigs: chatConfig?.variables
+      })
     });
   }
 

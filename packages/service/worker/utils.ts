@@ -22,7 +22,7 @@ export const getSafeEnv = () => {
 };
 
 export const getWorker = (name: `${WorkerNameEnum}`) => {
-  const workerPath = path.join(process.cwd(), '.next', 'server', 'worker', `${name}.js`);
+  const workerPath = path.join(process.cwd(), 'worker', `${name}.js`);
   return new Worker(workerPath, {
     env: getSafeEnv()
   });
@@ -198,6 +198,7 @@ export class WorkerPool<Props = Record<string, any>, Response = any> {
     if (item) {
       item.reject?.('error');
       clearTimeout(item.timeoutId);
+      item.worker.removeAllListeners();
       item.worker.terminate();
     }
 

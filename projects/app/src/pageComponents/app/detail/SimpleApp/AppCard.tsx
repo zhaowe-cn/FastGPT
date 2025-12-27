@@ -25,6 +25,7 @@ import { postTransition2Workflow } from '@/web/core/app/api/app';
 import { form2AppWorkflow } from '@/web/core/app/utils';
 import { type SimpleAppSnapshotType } from './useSnapshots';
 import ExportConfigPopover from '@/pageComponents/app/detail/ExportConfigPopover';
+import { ChatSidebarPaneEnum } from '@/pageComponents/chat/constants';
 
 const AppCard = ({
   appForm,
@@ -103,7 +104,12 @@ const AppCard = ({
             size={['sm', 'md']}
             variant={'whitePrimary'}
             leftIcon={<MyIcon name={'core/chat/chatLight'} w={'16px'} />}
-            onClick={() => router.push(`/chat?appId=${appId}`)}
+            onClick={() =>
+              window.open(
+                `/chat?appId=${appId}&pane=${ChatSidebarPaneEnum.RECENTLY_USED_APPS}`,
+                '_blank'
+              )
+            }
           >
             {t('common:core.Chat')}
           </Button>

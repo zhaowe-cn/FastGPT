@@ -1,5 +1,4 @@
 import type {
-  APIFileListResponse,
   ApiFileReadContentResponse,
   APIFileReadResponse,
   ApiDatasetDetailResponse,
@@ -10,13 +9,22 @@ import { addLog } from '../../../../common/system/log';
 import { readFileRawTextByUrl } from '../../read';
 import { type ParentIdType } from '@fastgpt/global/common/parentFolder/type';
 import { type RequireOnlyOne } from '@fastgpt/global/common/type/utils';
-import { addRawTextBuffer, getRawTextBuffer } from '../../../../common/buffer/rawText/controller';
-import { addMinutes } from 'date-fns';
+import { getS3RawTextSource } from '../../../../common/s3/sources/rawText';
 
 type ResponseDataType = {
   success: boolean;
   message: string;
   data: any;
+};
+
+type APIFileListResponse = {
+  id: string;
+  parentId: ParentIdType;
+  name: string;
+  type: 'file' | 'folder';
+  updateTime: Date;
+  createTime: Date;
+  hasChild?: boolean;
 };
 
 export const useApiDatasetRequest = ({ apiServer }: { apiServer: APIFileServer }) => {
@@ -106,6 +114,7 @@ export const useApiDatasetRequest = ({ apiServer }: { apiServer: APIFileServer }
 
     const formattedFiles = files.map((file) => ({
       ...file,
+      rawId: file.id,
       hasChild: file.hasChild ?? file.type === 'folder'
     }));
 
@@ -116,12 +125,14 @@ export const useApiDatasetRequest = ({ apiServer }: { apiServer: APIFileServer }
     teamId,
     tmbId,
     apiFileId,
-    customPdfParse
+    customPdfParse,
+    datasetId
   }: {
     teamId: string;
     tmbId: string;
     apiFileId: string;
     customPdfParse?: boolean;
+    datasetId: string;
   }): Promise<ApiFileReadContentResponse> => {
     const data = await request<
       {
@@ -143,28 +154,32 @@ export const useApiDatasetRequest = ({ apiServer }: { apiServer: APIFileServer }
     }
     if (previewUrl) {
       // Get from buffer
-      const buffer = await getRawTextBuffer(previewUrl);
-      if (buffer) {
+      const rawTextBuffer = await getS3RawTextSource().getRawTextBuffer({
+        sourceId: previewUrl,
+        customPdfParse
+      });
+      if (rawTextBuffer) {
         return {
           title,
-          rawText: buffer.text
+          rawText: rawTextBuffer.text
         };
       }
 
-      const rawText = await readFileRawTextByUrl({
+      const { rawText } = await readFileRawTextByUrl({
         teamId,
         tmbId,
         url: previewUrl,
         relatedId: apiFileId,
+        datasetId,
         customPdfParse,
         getFormatText: true
       });
 
-      await addRawTextBuffer({
+      getS3RawTextSource().addRawTextBuffer({
         sourceId: previewUrl,
         sourceName: title || '',
         text: rawText,
-        expiredTime: addMinutes(new Date(), 30)
+        customPdfParse
       });
 
       return {
@@ -201,18 +216,27 @@ export const useApiDatasetRequest = ({ apiServer }: { apiServer: APIFileServer }
     if (fileData) {
       return {
         id: fileData.id,
+        rawId: apiFileId,
         name: fileData.name,
-        parentId: fileData.parentId === null ? '' : fileData.parentId
+        parentId: fileData.parentId === null ? '' : fileData.parentId,
+        type: fileData.type,
+        updateTime: fileData.updateTime,
+        createTime: fileData.createTime
       };
     }
 
     return Promise.reject('File not found');
   };
 
+  const getFileRawId = (fileId: string) => {
+    return fileId;
+  };
+
   return {
     getFileContent,
     listFiles,
     getFilePreviewUrl,
-    getFileDetail
+    getFileDetail,
+    getFileRawId
   };
 };

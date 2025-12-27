@@ -1,24 +1,19 @@
-import createClient, { type SystemVarType } from '@fastgpt-sdk/plugin';
-import { PluginSourceEnum } from '@fastgpt/global/core/app/plugin/constants';
+import { RunToolWithStream } from '@fastgpt/global/sdk/fastgpt-plugin';
+import { AppToolSourceEnum } from '@fastgpt/global/core/app/tool/constants';
+import { pluginClient, PLUGIN_BASE_URL, PLUGIN_TOKEN } from '../../../thirdProvider/fastgptPlugin';
+import { addLog } from '../../../common/system/log';
+import { retryFn } from '@fastgpt/global/common/system/utils';
 
-const client = createClient({
-  baseUrl: process.env.PLUGIN_BASE_URL || '',
-  token: process.env.PLUGIN_TOKEN || ''
-});
-
-export async function getSystemToolList() {
-  const res = await client.tool.list();
+export async function APIGetSystemToolList() {
+  const res = await pluginClient.tool.list();
 
   if (res.status === 200) {
     return res.body.map((item) => {
       return {
         ...item,
-        id: `${PluginSourceEnum.systemTool}-${item.id}`,
-        parentId: item.parentId ? `${PluginSourceEnum.systemTool}-${item.parentId}` : undefined,
-        avatar:
-          item.avatar && item.avatar.startsWith('/imgs/tools/')
-            ? `/api/system/pluginImgs/${item.avatar.replace('/imgs/tools/', '')}`
-            : item.avatar
+        id: `${AppToolSourceEnum.systemTool}-${item.toolId}`,
+        parentId: item.parentId ? `${AppToolSourceEnum.systemTool}-${item.parentId}` : undefined,
+        avatar: item.icon
       };
     });
   }
@@ -26,26 +21,23 @@ export async function getSystemToolList() {
   return Promise.reject(res.body);
 }
 
-export async function runTool({
-  toolId,
-  inputs,
-  systemVar
-}: {
-  toolId: string;
-  inputs: Record<string, any>;
-  systemVar: SystemVarType;
-}) {
-  const res = await client.tool.run({
-    body: {
-      toolId,
-      inputs,
-      systemVar
-    }
-  });
+const runToolInstance = new RunToolWithStream({
+  baseUrl: PLUGIN_BASE_URL,
+  token: PLUGIN_TOKEN
+});
+export const APIRunSystemTool = runToolInstance.run.bind(runToolInstance);
 
-  if (res.status === 200 && res.body.output) {
-    return res.body.output;
-  } else {
-    return Promise.reject(res.body);
-  }
-}
+export const getSystemToolTags = () => {
+  return retryFn(async () => {
+    const res = await pluginClient.tool.getTags();
+
+    if (res.status === 200) {
+      const toolTypes = res.body || [];
+
+      return toolTypes;
+    }
+
+    addLog.error('Get system tool type error', res.body);
+    return [];
+  });
+};

@@ -13,11 +13,9 @@ export enum FlowNodeInputTypeEnum { // render ui
   JSONEditor = 'JSONEditor',
 
   addInputParam = 'addInputParam', // params input
+  customVariable = 'customVariable', // 外部变量
 
-  // special input
   selectApp = 'selectApp',
-  customVariable = 'customVariable',
-
   // ai model select
   selectLLMModel = 'selectLLMModel',
   settingLLMModel = 'settingLLMModel',
@@ -28,9 +26,12 @@ export enum FlowNodeInputTypeEnum { // render ui
   settingDatasetQuotePrompt = 'settingDatasetQuotePrompt',
 
   hidden = 'hidden',
-  custom = 'custom',
+  custom = 'custom', // 自定义渲染
 
-  fileSelect = 'fileSelect'
+  fileSelect = 'fileSelect',
+  timePointSelect = 'timePointSelect',
+  timeRangeSelect = 'timeRangeSelect',
+  password = 'password'
 }
 export const FlowNodeInputMap: Record<
   FlowNodeInputTypeEnum,
@@ -48,7 +49,7 @@ export const FlowNodeInputMap: Record<
     icon: 'core/workflow/inputType/option'
   },
   [FlowNodeInputTypeEnum.multipleSelect]: {
-    icon: 'core/workflow/inputType/option'
+    icon: 'core/workflow/inputType/multipleSelect'
   },
   [FlowNodeInputTypeEnum.switch]: {
     icon: 'core/workflow/inputType/switch'
@@ -78,7 +79,7 @@ export const FlowNodeInputMap: Record<
     icon: 'core/workflow/inputType/selectDataset'
   },
   [FlowNodeInputTypeEnum.hidden]: {
-    icon: 'core/workflow/inputType/select'
+    icon: 'core/workflow/inputType/internal'
   },
   [FlowNodeInputTypeEnum.customVariable]: {
     icon: 'core/workflow/inputType/customVariable'
@@ -94,11 +95,21 @@ export const FlowNodeInputMap: Record<
   },
   [FlowNodeInputTypeEnum.fileSelect]: {
     icon: 'core/workflow/inputType/file'
+  },
+  [FlowNodeInputTypeEnum.timePointSelect]: {
+    icon: 'core/workflow/inputType/timePointSelect'
+  },
+  [FlowNodeInputTypeEnum.timeRangeSelect]: {
+    icon: 'core/workflow/inputType/timeRangeSelect'
+  },
+  [FlowNodeInputTypeEnum.password]: {
+    icon: 'core/workflow/inputType/password'
   }
 };
 
 export enum FlowNodeOutputTypeEnum {
   hidden = 'hidden',
+  error = 'error',
   source = 'source',
   static = 'static',
   dynamic = 'dynamic'
@@ -109,6 +120,8 @@ export enum FlowNodeTypeEnum {
   systemConfig = 'userGuide',
   pluginConfig = 'pluginConfig',
   globalVariable = 'globalVariable',
+  comment = 'comment',
+
   workflowStart = 'workflowStart',
   chatNode = 'chatNode',
 
@@ -119,9 +132,6 @@ export enum FlowNodeTypeEnum {
   classifyQuestion = 'classifyQuestion',
   contentExtract = 'contentExtract',
   httpRequest468 = 'httpRequest468',
-  runApp = 'app',
-  appModule = 'appModule',
-  pluginModule = 'pluginModule',
   pluginInput = 'pluginInput',
   pluginOutput = 'pluginOutput',
   queryExtension = 'cfr',
@@ -140,9 +150,13 @@ export enum FlowNodeTypeEnum {
   loopStart = 'loopStart',
   loopEnd = 'loopEnd',
   formInput = 'formInput',
-  comment = 'comment',
   tool = 'tool',
-  toolSet = 'toolSet'
+  toolSet = 'toolSet',
+
+  // child:
+  appModule = 'appModule',
+  pluginModule = 'pluginModule',
+  runApp = 'app'
 }
 
 // node IO value type

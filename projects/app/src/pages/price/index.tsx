@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { serviceSideProps } from '@/web/common/i18n/utils';
-import { Box, Flex, HStack, VStack } from '@chakra-ui/react';
+import { Box, Button, Flex, HStack, IconButton, VStack } from '@chakra-ui/react';
 import { useUserStore } from '@/web/support/user/useUserStore';
 import { getTeamPlanStatus } from '@/web/support/user/team/api';
 
@@ -20,10 +20,52 @@ const PriceBox = () => {
   const { feConfigs } = useSystemStore();
   const router = useRouter();
 
+  const backButtonRef = useRef<HTMLButtonElement>(null);
+  const [isButtonInView, setIsButtonInView] = useState(false);
+
   const { data: teamSubPlan } = useRequest2(getTeamPlanStatus, {
     manual: false,
     refreshDeps: [userInfo]
   });
+
+  // TODO: 封装成一个 hook 来判断滚动态
+  useEffect(() => {
+    if (!teamSubPlan?.standard?.teamId) {
+      setIsButtonInView(false);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsButtonInView(entry.isIntersecting);
+      },
+      {
+        threshold: 0,
+        rootMargin: '0px 0px -50px 0px'
+      }
+    );
+
+    if (backButtonRef.current) {
+      observer.observe(backButtonRef.current);
+    }
+
+    return () => {
+      if (backButtonRef.current) {
+        observer.unobserve(backButtonRef.current);
+      }
+      observer.disconnect();
+    };
+  }, [teamSubPlan?.standard?.teamId]);
+
+  const handleBack = () => {
+    // Check if there is history to go back to
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      // No history, navigate to home page
+      router.push('/dashboard/agent');
+    }
+  };
 
   const onPaySuccess = () => {
     setTimeout(() => {
@@ -43,12 +85,39 @@ const PriceBox = () => {
       backgroundSize={'cover'}
       backgroundRepeat={'no-repeat'}
     >
+      {teamSubPlan?.standard?.teamId && (
+        <Button
+          ref={backButtonRef}
+          variant={'transparentBase'}
+          color={'primary.700'}
+          leftIcon={<MyIcon name={'core/workflow/undo'} w={4} />}
+          onClick={handleBack}
+          alignSelf={'flex-start'}
+          mt={-8}
+        >
+          {t('common:back')}
+        </Button>
+      )}
+      {!isButtonInView && teamSubPlan?.standard?.teamId && (
+        <IconButton
+          aria-label={t('common:back')}
+          position={'fixed'}
+          variant={'whiteBase'}
+          top={10}
+          left={'1.5vw'}
+          w={9}
+          h={9}
+          icon={<MyIcon name={'core/workflow/undo'} w={4} />}
+          onClick={handleBack}
+        />
+      )}
+
       {/* standard sub */}
       <VStack>
         <Box fontWeight={'600'} color={'myGray.900'} fontSize={['24px', '36px']}>
           {t('common:support.wallet.subscription.Sub plan')}
         </Box>
-        <Box mt={8} mb={10} fontWeight={'500'} color={'myGray.600'} fontSize={'md'}>
+        <Box fontWeight={'500'} color={'myGray.600'} fontSize={'md'}>
           {t('common:support.wallet.subscription.Sub plan tip', {
             title: feConfigs?.systemTitle
           })}

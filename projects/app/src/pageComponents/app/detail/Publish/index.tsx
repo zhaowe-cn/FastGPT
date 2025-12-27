@@ -17,8 +17,9 @@ const Link = dynamic(() => import('./Link'));
 const API = dynamic(() => import('./API'));
 const FeiShu = dynamic(() => import('./FeiShu'));
 const DingTalk = dynamic(() => import('./DingTalk'));
-// const Wecom = dynamic(() => import('./Wecom'));
+const Wecom = dynamic(() => import('./Wecom'));
 const OffiAccount = dynamic(() => import('./OffiAccount'));
+const Playground = dynamic(() => import('./Playground'));
 
 const OutLink = () => {
   const { t } = useTranslation();
@@ -64,13 +65,17 @@ const OutLink = () => {
           }
         ]
       : []),
-    // {
-    //   icon: 'core/app/publish/wecom',
-    //   title: t('publish:wecom.bot'),
-    //   desc: t('publish:wecom.bot_desc'),
-    //   value: PublishChannelEnum.wecom,
-    //   isProFn: true
-    // },
+    ...(feConfigs?.show_publish_wecom === true
+      ? [
+          {
+            icon: 'core/app/publish/wecom',
+            title: t('publish:wecom.bot'),
+            desc: t('publish:wecom.bot_desc'),
+            value: PublishChannelEnum.wecom,
+            isProFn: true
+          }
+        ]
+      : []),
     ...(feConfigs?.show_publish_offiaccount !== false
       ? [
           {
@@ -81,7 +86,14 @@ const OutLink = () => {
             isProFn: true
           }
         ]
-      : [])
+      : []),
+    {
+      icon: 'core/chat/sidebar/home',
+      title: t('common:navbar.Chat'),
+      desc: t('app:publish.chat_desc'),
+      value: PublishChannelEnum.playground,
+      isProFn: false
+    }
   ]);
 
   const [linkType, setLinkType] = useState<PublishChannelEnum>(PublishChannelEnum.share);
@@ -135,8 +147,9 @@ const OutLink = () => {
         {linkType === PublishChannelEnum.apikey && <API appId={appId} />}
         {linkType === PublishChannelEnum.feishu && <FeiShu appId={appId} />}
         {linkType === PublishChannelEnum.dingtalk && <DingTalk appId={appId} />}
-        {/* {linkType === PublishChannelEnum.wecom && <Wecom appId={appId} />} */}
+        {linkType === PublishChannelEnum.wecom && <Wecom appId={appId} />}
         {linkType === PublishChannelEnum.officialAccount && <OffiAccount appId={appId} />}
+        {linkType === PublishChannelEnum.playground && <Playground appId={appId} />}
       </Flex>
     </Box>
   );
