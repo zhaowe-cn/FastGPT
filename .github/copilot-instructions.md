@@ -72,9 +72,9 @@ This is a **monorepo** project managed with pnpm workspace:
 
 ### Translation Keys
 
-- Use lowercase with underscores: `common.close`, `app.template.simple_robot`
-- Format: `namespace:key` (e.g., `t('common:close')`)
-- Namespaces: `common`, `publish`, `user`, `app`, etc.
+- Use lowercase with underscores for keys: `close`, `simple_robot`
+- Organize by namespace: `common`, `app`, `publish`, `user`, etc.
+- Format when calling: `namespace:key` (e.g., `t('common:close')`, `t('app:template.simple_robot')`)
 
 ### In Components
 
@@ -90,7 +90,10 @@ const Component = () => {
 ### In Server-Side Props
 
 ```typescript
-export async function getServerSideProps(context: any) {
+import type { GetServerSidePropsContext } from 'next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
   return {
     props: {
       ...(await serverSideTranslations(context.locale, ['publish', 'user']))
@@ -224,7 +227,7 @@ export const postCreateApp = (data: CreateAppBody) =>
 
 ## Additional Notes
 
-- The project uses ChakraUI v2 with Next.js 14
+- The project uses Chakra UI v2 with Next.js 14
 - Monaco Editor is integrated for code editing features
 - Lexical is used for rich text editing
 - React Beautiful DnD for drag-and-drop functionality
